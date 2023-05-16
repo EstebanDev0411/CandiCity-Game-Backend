@@ -42,5 +42,19 @@ export const updateUser: RequestHandler = (req: any, res: any) => {
     });
 };
 
+export const updateLevel: RequestHandler = (req: any, res: any) => {
+  FirestoreService.updateOne(userCollection, req.query.userId, req.body)
+  .then((_response) => {
+    return res
+      .status(StatusCodes.OK)
+      .json({ status: "successfully updated" });
+  })
+  .catch((error: any) => {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: error.message });
+  });
+}
+
 const user = { deleteUser, updateUser };
 export default user;

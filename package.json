@@ -1,7 +1,7 @@
 {
-  "name": "impervim-server",
+  "name": "CandyCity-Server",
   "version": "1.0.0",
-  "description": "impervim game backend server",
+  "description": "CandyCity Game Backend Server",
   "main": "server.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",

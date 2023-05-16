@@ -7,7 +7,7 @@ import {
   userCollection,
 } from "../config/collections";
 import { getFirestore } from "firebase-admin/firestore";
-import { getRandomArbitrary } from "../utils/utils";
+// import { getRandomArbitrary } from "../utils/utils";
 const db = getFirestore();
 
 // signup
@@ -48,6 +48,7 @@ export const signup: RequestHandler = async (req: any, res: any) => {
       const newDoc = {
         email: req.body.email,
         userName: req.body.userName,
+        level: 1
       };
       const ret = await db
         .collection(userCollection)

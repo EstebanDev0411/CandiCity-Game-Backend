@@ -48,6 +48,8 @@ export const signup: RequestHandler = async (req: any, res: any) => {
       const newDoc = {
         email: req.body.email,
         userName: req.body.userName,
+        point: 1000,
+        rank: 1000,
         level: 1
       };
       const ret = await db

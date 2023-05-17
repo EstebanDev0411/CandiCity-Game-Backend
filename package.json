@@ -31,6 +31,7 @@
     "@types/supertest": "^2.0.12"
   },
   "dependencies": {
+    "@altura/altura-js": "^1.1.4",
     "@types/node": "^18.7.18",
     "bcrypt": "^5.0.1",
     "body-parser": "^1.19.2",

@@ -7,15 +7,15 @@ import serviceAccount from "./serviceAccountKey.json";
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount as any),
 });
-
 const firebaseConfig = {
-  apiKey: "AIzaSyBYXjfeiHMrvroRFi-Cip0hf-dbpARWDe8",
+  apiKey: "AIzaSyA-l4LH2YA-QWufp8Kv-GuUofjGrrl7muA",
   authDomain: "candy-bubble-f6f67.firebaseapp.com",
+  databaseURL: "https://candy-bubble-f6f67-default-rtdb.firebaseio.com",
   projectId: "candy-bubble-f6f67",
   storageBucket: "candy-bubble-f6f67.appspot.com",
-  messagingSenderId: "833592959022",
-  appId: "1:833592959022:web:14c86c2b7a3f992d7dbfbf",
-  measurementId: "G-NMCJZ85MK1"
+  messagingSenderId: "188725186502",
+  appId: "1:188725186502:web:631cc58fe865bd79126cc7",
+  measurementId: "G-3Q6L5HHM78"
 };
 
 firebase.initializeApp(firebaseConfig);

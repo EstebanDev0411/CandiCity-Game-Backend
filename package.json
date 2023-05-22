@@ -1,5 +1,5 @@
 {
-  "name": "CandyCity-Server",
+  "name": "candycityserver",
   "version": "1.0.0",
   "description": "CandyCity Game Backend Server",
   "main": "server.js",
@@ -42,7 +42,7 @@
     "dayjs": "^1.11.0",
     "dotenv": "^16.0.0",
     "express": "^4.17.2",
-    "firebase": "^9.14.0",
+    "firebase": "^9.22.0",
     "firebase-admin": "^11.3.0",
     "http-status-codes": "^2.2.0",
     "jsonwebtoken": "^8.5.1",

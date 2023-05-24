@@ -6,6 +6,7 @@ import serviceAccount from "./serviceAccountKey.json";
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount as any),
+  databaseURL: "https://candy-bubble-f6f67-default-rtdb.firebaseio.com",
 });
 const firebaseConfig = {
   apiKey: "AIzaSyA-l4LH2YA-QWufp8Kv-GuUofjGrrl7muA",

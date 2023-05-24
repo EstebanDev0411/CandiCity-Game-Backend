@@ -3,59 +3,92 @@ import { StatusCodes } from "http-status-codes";
 import logger from "../utils/logger";
 import firebase from "../config/firebase";
 import FirestoreService from "../service/firestore.service";
-import {
-  userCollection,
-} from "../config/collections";
-import { getFirestore } from "firebase-admin/firestore";
-// import { getRandomArbitrary } from "../utils/utils";
-const db = getFirestore();
+import { userCollection } from "../config/collections";
+
+// // Sign in with Google
+// export const signInWithGoogle = async (req: Request, res: Response): Promise<Response> => {
+//   logger.info('signInWithGoogle');
+
+//   try {
+//     const { idToken } = req.body;
+
+//     // Sign in with Firebase Authentication.
+//     firebase
+//       .auth()
+//       .signInWithCredential(firebase.auth.GoogleAuthProvider.credential(idToken))
+//       .then((data) => {
+//         // Handle successful sign-in.
+//         return res.status(StatusCodes.OK).json({ message: 'Successfully signed in with Google!' });
+//       })
+//       .catch((error) => {
+//         // Handle sign-in error.
+//         let errorCode = error.code;
+//         let errorMessage = error.message;
+//         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: errorMessage });
+//       });
+//   } catch (error) {
+//     // Handle error.
+//   }
+// };
+
+// // Sign in with Facebook
+// export const signInWithFacebook = async (req: Request, res: Response): Promise<Response> => {
+//   logger.info('signInWithFacebook');
+
+//   try {
+//     const { accessToken } = req.body;
+
+//     // Sign in with Firebase Authentication.
+//     firebase
+//       .auth()
+//       .signInWithCredential(firebase.auth.FacebookAuthProvider.credential(accessToken))
+//       .then(async (_data) => {
+//         // Handle successful sign-in.
+//         const filter = {
+//           field: "email",
+//           opStr: "==",
+//           value: req.body.email,
+//         };
+//         const doc = (await FirestoreService.fetchOne(userCollection, filter))
+//           .docs[0];
+//         const retVal = {
+//           uid: doc.id,
+//           ...doc.data(),
+//         };
+//         return res.status(StatusCodes.OK).json(retVal);
+//       })
+//       .catch((error) => {
+//         // Handle sign-in error.
+//         let errorMessage = error.message;
+//         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: errorMessage });
+//       });
+//   } catch (error) {
+//     // Handle error.
+//   }
+// };
 
 // signup
-export const signup: RequestHandler = async (req: any, res: any) => {
+export const signup: RequestHandler = (req: any, res: any) => {
   logger.info("signup");
-  if (
-    !req.body.email ||
-    !req.body.password ||
-    !req.body.userName ||
-    req.body.userName === ""
-  ) {
+  if (!req.body.email || !req.body.password || !req.body.userName || req.body.userName == "") {
     return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
       email: "email is required",
       password: "password is required",
-      userName: "username is required",
+      userName: "user name is required",
     });
   }
-
-  // check userName is duplicated
-  const filter = {
-    field: "userName",
-    opStr: "==",
-    value: req.body.userName,
-  };
-
-  const userDocs = (await FirestoreService.fetchOne(userCollection, filter))
-    .docs;
-  if (userDocs.length > 0) {
-    return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
-      userName: "username is duplicated",
-    });
-  }
-
   firebase
     .auth()
     .createUserWithEmailAndPassword(req.body.email, req.body.password)
-    .then(async (data: any) => {
+    .then(async (_data: any) => {
       const newDoc = {
         email: req.body.email,
-        userName: req.body.userName,
-        point: 1000,
+        points: 1000,
         rank: 1000,
-        level: 1
+        is_online: true,
+        userName: req.body.userName
       };
-      const ret = await db
-        .collection(userCollection)
-        .doc(data.user?.uid)
-        .create(newDoc);
+      const ret = await FirestoreService.createOne(userCollection, newDoc);
       return res.status(StatusCodes.CREATED).json(ret);
     })
     .catch(function (error: any) {
@@ -73,6 +106,7 @@ export const signup: RequestHandler = async (req: any, res: any) => {
     });
 };
 
+// signin
 export const signin: RequestHandler = (req: any, res: any) => {
   logger.info("signin");
   if (!req.body.email || !req.body.password) {
@@ -84,7 +118,7 @@ export const signin: RequestHandler = (req: any, res: any) => {
   firebase
     .auth()
     .signInWithEmailAndPassword(req.body.email, req.body.password)
-    .then(async (user) => {
+    .then(async (_user) => {
       const filter = {
         field: "email",
         opStr: "==",
@@ -93,7 +127,7 @@ export const signin: RequestHandler = (req: any, res: any) => {
       const doc = (await FirestoreService.fetchOne(userCollection, filter))
         .docs[0];
       const retVal = {
-        userId: user.user?.uid,
+        uid: doc.id,
         ...doc.data(),
       };
       return res.status(StatusCodes.OK).json(retVal);
@@ -167,5 +201,6 @@ export const forgetPassword: RequestHandler = (req: any, res: any) => {
     });
 };
 
-const auth = { signup, signin, verifyEmail, forgetPassword };
-export default auth;
+
+const user = { signup, signin, verifyEmail, forgetPassword };
+export default user;

@@ -10,7 +10,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
 // Routes
 app.get("/", (_req, res) => {
   res.status(StatusCodes.OK).send("API Running");

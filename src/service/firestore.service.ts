@@ -24,6 +24,18 @@ export const updateOne = async (
   }
 };
 
+export const deleteOne = async (
+  collectionName: string,
+  docId: string
+) => {
+  try {
+    var docsRef = db.collection(collectionName);
+    return await docsRef.doc(docId).delete();
+  } catch (e) {
+    throw e;
+  }
+}
+
 export const fetchOne = async (collectionName: string, filter: any) => {
   try {
     var docsRef = db.collection(collectionName);
@@ -33,5 +45,5 @@ export const fetchOne = async (collectionName: string, filter: any) => {
   }
 };
 
-const FirestoreService = { createOne, updateOne, fetchOne };
+const FirestoreService = { createOne, updateOne, deleteOne, fetchOne };
 export default FirestoreService;

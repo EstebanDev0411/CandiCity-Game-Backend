@@ -45,5 +45,36 @@ export const fetchOne = async (collectionName: string, filter: any) => {
   }
 };
 
-const FirestoreService = { createOne, updateOne, deleteOne, fetchOne };
+export const fetchData = async (collectionName: string, filter: any) => {
+  try {
+    var docsRef = db.collection(collectionName);
+    const ret = await docsRef.where(filter.field, filter.opStr, filter.value)
+      .get();
+    const ret_data: FirebaseFirestore.DocumentData[] = ret.docs.map(
+      (doc) => {
+        return { ...doc.data(), id: doc.id };
+      }
+    );
+    return ret_data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+export const fetchAll = async (collectionName: string) => {
+  try {
+    var docsRef = db.collection(collectionName);
+    const ret = await docsRef.get();
+    const ret_data: FirebaseFirestore.DocumentData[] = ret.docs.map(
+      (doc) => {
+        return { ...doc.data(), id: doc.id };
+      }
+    );
+    return ret_data;
+  } catch (e) {
+    throw e;
+  }
+};
+
+const FirestoreService = { createOne, updateOne, deleteOne, fetchOne, fetchAll, fetchData };
 export default FirestoreService;

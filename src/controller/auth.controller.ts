@@ -126,7 +126,7 @@ export const signin: RequestHandler = (req: any, res: any) => {
       };
       const doc = (await FirestoreService.fetchOne(userCollection, filter))
         .docs[0];
-      const retVal = {
+      const retVal = {  
         uid: doc.id,
         ...doc.data(),
       };

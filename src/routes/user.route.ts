@@ -6,5 +6,7 @@ const userRoute = Router();
 
 userRoute.post("/update", verifyBodyRequest, user.updateUser);
 userRoute.delete("/delete", user.deleteUser);
+userRoute.get("/getOnlineUsers", user.getOnlineUsers);
+userRoute.get("/getUser", user.getUser);
 
 export default userRoute;

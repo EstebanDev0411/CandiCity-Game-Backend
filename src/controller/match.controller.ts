@@ -7,18 +7,20 @@ import { getFirestore } from "firebase-admin/firestore";
 
 const db = getFirestore();
 
-export const addMatch: RequestHandler = async (req: any, res: any) => {
-    logger.info('create new room');
+export const joinMatch: RequestHandler = async (req: any, res: any) => {
+    logger.info('create new match room');
     if (!req.body.user1_id) {
         return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
-          user1_id: 'user1_id is required',
+          user1_id: 'user1_id is required'
         });
     }
     try {
-        const { user1_id } = req.body;
+        const { user1_id, user2_id } = req.body;
         const newDoc = {
-            user1_id : user1_id,
-            play_status: 0,
+            user1 : user1_id,
+            user2 : user2_id,
+            play_status: 1,
+            winner: "",
             created_at: Date(),
             started_at: Date(),
             finished_at: Date()
@@ -30,51 +32,70 @@ export const addMatch: RequestHandler = async (req: any, res: any) => {
     }
 };
 
-export const updateMatch: RequestHandler = async (req: any, res: any) => {
+export const startMatch: RequestHandler = async (req: any, res: any) => {
     logger.info("update match");
     const matchId = req.query.match_id;
-    FirestoreService.updateOne(matchCollection, matchId, req.body)
+    try
+    {
+      await db.collection(matchCollection).doc(matchId).update(
+          { 
+            "play_status": 2,
+            "started_at": Date()
+          })
+        .then((_response) => {
+          return res
+            .status(StatusCodes.OK)
+            .json({ status: "successfully started" });
+        })
+        .catch((error: any) => {
+          return res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .json({ error: error.message });
+        });
+    } catch(error) {
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+    }
+};
+
+export const finishMatch: RequestHandler = async (req: any, res: any) => {
+  logger.info("update match");
+  const matchId = req.query.match_id;
+  try
+  {
+    const { winner } = req.body;
+    await db.collection(matchCollection).doc(matchId).update(
+        {
+          "play_status": 3,
+          "winner" : winner,
+          "finished_at": Date(),
+        })
       .then((_response) => {
         return res
           .status(StatusCodes.OK)
-          .json({ status: "successfully updated" });
+          .json({ status: "successfully finished" });
       })
       .catch((error: any) => {
         return res
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
           .json({ error: error.message });
       });
+  } catch(error) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+  }
 };
 
-export const getAvailableMatches: RequestHandler = async (req: any, res: any) => {
-    logger.info("get available matches");
-    const { match_status } = req.body;
-    console.log(match_status)
-    try
-    {
-      const filter = {
-        field: "play_status",
-        opStr: "==",
-        value: match_status,
-      };
-      const ret = await FirestoreService.fetchData(matchCollection, filter);
-      return res.status(StatusCodes.OK).json(ret);
-    } catch(error) {
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
-    }
-  };
+export const getMatchesByUserId: RequestHandler = async (req: any, res: any) => {
+  logger.info("get matches by userId ");
+  const { user_id } = req.body;
+  try
+  {
+    console.log(user_id)
+    const ret = db.collection(matchCollection).where('user1', '==', user_id).where('play_status', '==', 1).get();
+    return res.status(StatusCodes.OK).json(ret);  
+  } catch(error) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+  }
+};
 
-  export const getMatchesByUserId: RequestHandler = async (req: any, res: any) => {
-    logger.info("get matches by userId ");
-    const { match_status, user_id } = req.body;
-    try
-    {
-      const ret = db.collection(matchCollection).where('play_status', '==', match_status).where('user1_id', '==', user_id).get();
-      return res.status(StatusCodes.OK).json(ret);
-    } catch(error) {
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
-    }
-  };
-
-const match = { addMatch, updateMatch, getAvailableMatches, getMatchesByUserId };
+const match = { joinMatch, startMatch, finishMatch, getMatchesByUserId };
 export default match;

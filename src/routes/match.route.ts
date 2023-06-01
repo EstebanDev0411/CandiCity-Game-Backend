@@ -4,8 +4,10 @@ import { verifyBodyRequest } from "../middlewares/verifyRequest";
 
 const matchRoute = Router();
 
-matchRoute.post("/create", verifyBodyRequest, match.addMatch);
-matchRoute.post("/update", verifyBodyRequest, match.updateMatch);
-matchRoute.get("/getAvailableMatches", match.getAvailableMatches);
-matchRoute.get("/getMatchesByUserId", match.getMatchesByUserId);
+// matchRoute.post("/create", verifyBodyRequest, match.addMatch);
+matchRoute.post("/joinMatch", verifyBodyRequest, match.joinMatch);
+matchRoute.post("/startMatch", match.startMatch);
+matchRoute.post("/finishMatch", match.finishMatch);
+matchRoute.post("/getMatchesByUserId", match.getMatchesByUserId);
+
 export default matchRoute;

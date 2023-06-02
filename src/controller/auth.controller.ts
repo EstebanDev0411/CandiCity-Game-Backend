@@ -4,9 +4,6 @@ import logger from "../utils/logger";
 import firebase from "../config/firebase";
 import FirestoreService from "../service/firestore.service";
 import { userCollection } from "../config/collections";
-import { getFirestore } from "firebase-admin/firestore";
-
-const db = getFirestore();
 // // Sign in with Google
 // export const signInWithGoogle = async (req: Request, res: Response): Promise<Response> => {
 //   logger.info('signInWithGoogle');
@@ -79,7 +76,6 @@ export const signup: RequestHandler = (req: any, res: any) => {
       userName: "user name is required",
     });
   }
-  const rank = db.collection(userCollection).count();
   firebase
     .auth()
     .createUserWithEmailAndPassword(req.body.email, req.body.password)
@@ -87,7 +83,7 @@ export const signup: RequestHandler = (req: any, res: any) => {
       const newDoc = {
         email: req.body.email,
         point: 0,
-        rank: rank,
+        rank: 999,
         level: 1,
         is_online: true,
         userName: req.body.userName

@@ -58,7 +58,7 @@ export const postScore: RequestHandler = async (req: any, res: any) => {
   {
     const ret = (await db.collection(userCollection).doc(userId).get()).data();
     const { score } = req.body;
-    await db.collection(userCollection).doc(userId).update({"point" : ret?.point + score})
+    await db.collection(userCollection).doc(userId).update({"point" : ret?.point + score, "level": (ret?.point + score) / 100})
       .then((_response) => {
         updateRanks();
         return res

@@ -53,7 +53,7 @@ export const fetchData = async (collectionName: string, filter: any) => {
     const ret_data: FirebaseFirestore.DocumentData[] = ret.docs.map(
       (doc) => {
         return { ...doc.data(), id: doc.id };
-      }
+      }   
     );
     return ret_data;
   } catch (e) {

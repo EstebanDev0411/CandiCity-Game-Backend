@@ -6,18 +6,28 @@ import { userCollection, matchCollection } from "../config/collections";
 import { getFirestore } from "firebase-admin/firestore";
 
 const db = getFirestore();
-export const getOnlineUsers: RequestHandler = async (_req: any, res: any) => {
+export const getOnlineUsers: RequestHandler = async (req: any, res: any) => {
   logger.info("get online users");
   try
   {
-    const filter = {
-      field: "is_online",
-      opStr: "==",
-      value: true,
-    };
+    // const { count, page } = req.body;
+    // const filter = {
+    //   field: "is_online",
+    //   opStr: "==",
+    //   value: true,
+    // };
+    const { count, page } = req.body;
+    const startAfter = count * (page - 1);
+
     updateRanks();
-    const ret = await FirestoreService.fetchData(userCollection, filter);
-    return res.status(StatusCodes.OK).json(ret);
+    // const ret = await FirestoreService.fetchData(userCollection, filter);  
+    const ret = await db.collection(userCollection).orderBy('rank').limit(count).startAfter(startAfter).get();
+    const ret_data: FirebaseFirestore.DocumentData[] = ret.docs.map(
+      (doc) => {
+        return { ...doc.data(), id: doc.id };
+      }   
+    );
+    return res.status(StatusCodes.OK).json(ret_data);
   } catch(error) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
   }

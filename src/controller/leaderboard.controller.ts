@@ -16,7 +16,7 @@ export const getOnlineUsers: RequestHandler = async (req: any, res: any) => {
     //   opStr: "==",
     //   value: true,
     // };
-    const { count, page } = req.body;
+    const { count, page } = req.query;
     const startAfter = count * (page - 1);
 
     updateRanks();

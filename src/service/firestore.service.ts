@@ -76,5 +76,17 @@ export const fetchAll = async (collectionName: string) => {
   }
 };
 
-const FirestoreService = { createOne, updateOne, deleteOne, fetchOne, fetchAll, fetchData };
+const getOneByField = async (collectionName: string, fieldName: string, value: any) => {
+  const collectionRef = db.collection(collectionName);
+  const querySnapshot = await collectionRef.where(fieldName, "==", value).get();
+  if (querySnapshot.empty) {
+    return null;
+  } else {
+    const docSnapshot = querySnapshot.docs[0];
+    const data = docSnapshot.data();
+    return { id: docSnapshot.id, ...data };
+  }
+};
+
+const FirestoreService = { createOne, updateOne, deleteOne, fetchOne, fetchAll, fetchData, getOneByField };
 export default FirestoreService;

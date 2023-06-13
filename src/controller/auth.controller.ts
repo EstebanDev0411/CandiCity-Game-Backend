@@ -67,7 +67,7 @@ import { userCollection } from "../config/collections";
 // };
 
 // signup
-export const signup: RequestHandler = (req: any, res: any) => {
+export const signup: RequestHandler = async (req: any, res: any) => {
   logger.info("signup");
   if (!req.body.email || !req.body.password || !req.body.userName || req.body.userName == "") {
     return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
@@ -76,6 +76,14 @@ export const signup: RequestHandler = (req: any, res: any) => {
       userName: "user name is required",
     });
   }
+
+  const existingUser = await FirestoreService.getOneByField(userCollection, "userName", req.body.userName);
+  if (existingUser) {
+    return res.status(StatusCodes.CONFLICT).json({
+      userName: "user name already exists",
+    });
+  }
+
   firebase
     .auth()
     .createUserWithEmailAndPassword(req.body.email, req.body.password)

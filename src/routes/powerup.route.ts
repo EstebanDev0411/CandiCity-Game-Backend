@@ -6,6 +6,6 @@ const matchRoute = Router();
 
 matchRoute.post("/addItem", verifyBodyRequest, powerup.addItem);
 matchRoute.delete("/deleteItem", verifyBodyRequest, powerup.deleteItem);
-matchRoute.get("/getAllItems", verifyBodyRequest, powerup.getAllItems);
+matchRoute.get("/getAllItems", powerup.getAllItems);
 
 export default matchRoute;

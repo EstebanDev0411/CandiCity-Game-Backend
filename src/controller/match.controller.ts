@@ -7,18 +7,12 @@ import { getFirestore } from "firebase-admin/firestore";
 
 const db = getFirestore();
 
-export const joinMatch: RequestHandler = async (req: any, res: any) => {
+export const createMatch: RequestHandler = async (req: any, res: any) => {
     logger.info('create new match room');
-    if (!req.body.user1_id) {
-        return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
-          user1_id: 'user1_id is required'
-        });
-    }
+    const {userId} = req.query;
     try {
-        const { user1_id, user2_id } = req.body;
         const newDoc = {
-            user1 : user1_id,
-            user2 : user2_id,
+            user1 : userId,
             play_status: 1,
             winner: "",
             created_at: Date(),
@@ -34,11 +28,12 @@ export const joinMatch: RequestHandler = async (req: any, res: any) => {
 
 export const startMatch: RequestHandler = async (req: any, res: any) => {
     logger.info("update match");
-    const matchId = req.query.match_id;
+    const { userId, matchId } = req.query;
     try
     {
       await db.collection(matchCollection).doc(matchId).update(
           { 
+            "user2" : userId,
             "play_status": 2,
             "started_at": Date()
           })
@@ -90,12 +85,12 @@ export const getMatchesByUserId: RequestHandler = async (req: any, res: any) => 
   try
   {
     console.log(user_id)
-    const ret = db.collection(matchCollection).where('user1', '==', user_id).where('play_status', '==', 1).get();
+    const ret = db.collection(matchCollection).where('user1', '==', user_id).get();
     return res.status(StatusCodes.OK).json(ret);  
   } catch(error) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
   }
 };
 
-const match = { joinMatch, startMatch, finishMatch, getMatchesByUserId };
+const match = { createMatch, startMatch, finishMatch, getMatchesByUserId };
 export default match;

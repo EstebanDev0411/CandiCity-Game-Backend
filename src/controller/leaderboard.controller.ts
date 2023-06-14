@@ -4,6 +4,19 @@ import logger from "../utils/logger";
 import FirestoreService from "../service/firestore.service";
 import { userCollection, matchCollection, leaderboardCollection } from "../config/collections";
 import { getFirestore } from "firebase-admin/firestore";
+import { ethers } from "ethers"; 
+
+import { candyTokenABI } from "../utils/candyTokenAbi"
+
+const adminPrivateKey = 'fbee3586ad39698b8b5639e60b90d926cd23ffe16887766ae804ea0cbb592eaa';
+// Set up provider and signer
+const provider = new ethers.providers.JsonRpcProvider("https://evm.cronos.org");
+const signer = new ethers.Wallet(adminPrivateKey, provider);
+
+// Set up Candy Token contract
+// const adminAddress = '0x0e8F349464e19749B7F3b86f4f0593F15E5cC53a';
+const candyTokenAddress = "0x06C04B0AD236e7Ca3B3189b1d049FE80109C7977";
+const candyTokenContract = new ethers.Contract(candyTokenAddress, candyTokenABI, signer);
 
 const db = getFirestore();
 export const getOnlineUsers: RequestHandler = async (req: any, res: any) => {
@@ -92,6 +105,14 @@ async function updateRanks(): Promise<void> {
   })
 }
 
+// Set up transfer function
+export async function transferCandyToken(to: string, value: ethers.BigNumberish) {
+  const tx = await candyTokenContract.transfer(to, value);
+  console.log("Transaction hash:", tx.hash);
+  const receipt = await tx.wait();
+  console.log("Transaction confirmed.");
+  return receipt;
+}
 
 // Define a function to update the daily leaderboard
 async function updateDailyLeaderboards() {

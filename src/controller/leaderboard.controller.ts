@@ -157,6 +157,28 @@ async function updateWeeklyLeaderboards() {
   await leaderboardRef.doc("weeklyReward").set({users: top3WeeklyUsers});
 }
 
+async function updateMonthlyLeaderboards() {
+  console.log('Updating monthly leaderboards!');
+  const leaderboardRef = db.collection(leaderboardCollection);
+  const monthlyRanking = leaderboardRef.doc('monthlyRanking');
+  const monthlyReward = leaderboardRef.doc('monthlyReward');
+
+  // Get the current top users in the monthly ranking
+  const leaderboardDoc = await monthlyRanking.get();
+  const currentTopUsers = leaderboardDoc.exists ? leaderboardDoc.data()?.topUsers ?? [] : [];
+  // Sort the top users by score in descending order
+  const sortedTopUsers = currentTopUsers.sort((a: { score: number; }, b: { score: number; }) => b.score - a.score);
+
+  // Extract the top 3 users and their scores
+  const top3Users = sortedTopUsers.slice(0, 3).map((user: { score: any; userId: any; }, index: number) => ({ score: user.score, rank: index + 1, name: user.userId, award: true}));
+
+  // Store the top 3 users in the monthly reward document
+  await monthlyReward.set({ topUsers: top3Users });
+
+  // Clear the data in the monthly ranking document
+  await monthlyRanking.set({ topUsers: [] });
+}
+
 // Call the updateLeaderboards function once a day at midnight
 setInterval(() => {
   const now = new Date();
@@ -167,6 +189,9 @@ setInterval(() => {
     if (now.getDay() === 1 && now.getHours() === 0 && now.getMinutes() === 0)
     {
       updateWeeklyLeaderboards();
+    }
+    if (now.getDate() === 1 && now.getHours() === 0 && now.getMinutes() === 0) {
+      updateMonthlyLeaderboards();
     }
   }, 60000);
 

@@ -5,66 +5,79 @@ import firebase from "../config/firebase";
 import FirestoreService from "../service/firestore.service";
 import { userCollection } from "../config/collections";
 // // Sign in with Google
-// export const signInWithGoogle = async (req: Request, res: Response): Promise<Response> => {
-//   logger.info('signInWithGoogle');
+export const signInWithGoogle: RequestHandler = async (req: any, res: any) => {
+  logger.info('signInWithGoogle');
 
-//   try {
-//     const { idToken } = req.body;
+  const { idToken } = req.body;
 
-//     // Sign in with Firebase Authentication.
-//     firebase
-//       .auth()
-//       .signInWithCredential(firebase.auth.GoogleAuthProvider.credential(idToken))
-//       .then((data) => {
-//         // Handle successful sign-in.
-//         return res.status(StatusCodes.OK).json({ message: 'Successfully signed in with Google!' });
-//       })
-//       .catch((error) => {
-//         // Handle sign-in error.
-//         let errorCode = error.code;
-//         let errorMessage = error.message;
-//         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: errorMessage });
-//       });
-//   } catch (error) {
-//     // Handle error.
-//   }
-// };
+  // Sign in with Firebase Authentication.
+  firebase
+    .auth()
+    .signInWithCredential(firebase.auth.GoogleAuthProvider.credential(idToken))
+    .then(async (_user) => {
+      const filter = {
+        field: "email",
+        opStr: "==",
+        value: req.body.email,
+      };
+      const doc = (await FirestoreService.fetchOne(userCollection, filter))
+        .docs[0];
+      const retVal = {  
+        uid: doc.id,
+        ...doc.data(),
+      };
+      return res.status(StatusCodes.OK).json(retVal);
+    })
+    .catch(function (error) {
+      let errorCode = error.code;
+      let errorMessage = error.message;
+      if (errorCode === "auth/wrong-password") {
+        return res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .json({ error: errorMessage });
+      } else {
+        return res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .json({ error: errorMessage });
+      }
+    });
+};
 
-// // Sign in with Facebook
-// export const signInWithFacebook = async (req: Request, res: Response): Promise<Response> => {
-//   logger.info('signInWithFacebook');
+// Sign in with Facebook
+export const signInWithFacebook: RequestHandler = async (req: any, res: any) => {
+  logger.info('signInWithFacebook');
 
-//   try {
-//     const { accessToken } = req.body;
+  try {
+    const { accessToken } = req.body;
 
-//     // Sign in with Firebase Authentication.
-//     firebase
-//       .auth()
-//       .signInWithCredential(firebase.auth.FacebookAuthProvider.credential(accessToken))
-//       .then(async (_data) => {
-//         // Handle successful sign-in.
-//         const filter = {
-//           field: "email",
-//           opStr: "==",
-//           value: req.body.email,
-//         };
-//         const doc = (await FirestoreService.fetchOne(userCollection, filter))
-//           .docs[0];
-//         const retVal = {
-//           uid: doc.id,
-//           ...doc.data(),
-//         };
-//         return res.status(StatusCodes.OK).json(retVal);
-//       })
-//       .catch((error) => {
-//         // Handle sign-in error.
-//         let errorMessage = error.message;
-//         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: errorMessage });
-//       });
-//   } catch (error) {
-//     // Handle error.
-//   }
-// };
+    // Sign in with Firebase Authentication.
+    firebase
+      .auth()
+      .signInWithCredential(firebase.auth.FacebookAuthProvider.credential(accessToken))
+      .then(async (_data) => {
+        // Handle successful sign-in.
+        const filter = {
+          field: "email",
+          opStr: "==",
+          value: req.body.email,
+        };
+        const doc = (await FirestoreService.fetchOne(userCollection, filter))
+          .docs[0];
+        const retVal = {
+          uid: doc.id,
+          ...doc.data(),
+        };
+        return res.status(StatusCodes.OK).json(retVal);
+      })
+      .catch((error) => {
+        // Handle sign-in error.
+        let errorMessage = error.message;
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: errorMessage });
+      });
+  } catch (error) {
+    // Handle error.
+  }
+};
 
 // signup
 export const signup: RequestHandler = async (req: any, res: any) => {

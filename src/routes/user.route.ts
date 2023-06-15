@@ -8,5 +8,6 @@ userRoute.post("/update", verifyBodyRequest, user.updateUser);
 userRoute.delete("/delete", user.deleteUser);
 userRoute.get("/getUser", user.getUser);
 userRoute.post("/postScore", user.postScore);
+userRoute.post("/getItem", user.getPowerupItem);
 
 export default userRoute;

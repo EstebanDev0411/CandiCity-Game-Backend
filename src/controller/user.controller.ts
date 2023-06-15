@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import { StatusCodes } from "http-status-codes";
 import logger from "../utils/logger";
-import { userCollection } from "../config/collections";
+import { powerupCollection, userCollection } from "../config/collections";
 import FirestoreService from "../service/firestore.service";
 import { getFirestore } from "firebase-admin/firestore";
 
@@ -102,7 +102,23 @@ async function updateRanks(): Promise<void> {
   })
 }
 
+export const getPowerupItem: RequestHandler = async (req: any, res: any) => {
+  logger.info("Get powerup Item");
+  const { userId } = req.query;  
+  try {
+    const { item } = req.body;
+    const querySnapshot = await db.collection(powerupCollection).where('name', '==', item).get();
+    if (querySnapshot.empty) {
+      throw new Error(`Powerup item with name ${item} not found`);
+    }
+    const powerupItemId = querySnapshot.docs[0].id;
+    const powerupItemRef = db.collection('users').doc(userId).collection('powerupItems').doc(powerupItemId);
+    await powerupItemRef.set(item);
+    return res.status(StatusCodes.OK).json({ status: "successfully got Item" });
+  } catch (error) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+  }
+};
 
-
-const user = { deleteUser, updateUser, postScore, getUser};
+const user = { deleteUser, updateUser, postScore, getUser, getPowerupItem};
 export default user;

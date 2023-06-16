@@ -19,6 +19,15 @@ const candyTokenAddress = "0x06C04B0AD236e7Ca3B3189b1d049FE80109C7977";
 const candyTokenContract = new ethers.Contract(candyTokenAddress, candyTokenABI, signer);
 
 const db = getFirestore();
+
+interface AwardUser {
+  reward: boolean;
+  name: string;
+  id: string;
+  dailyScore: number;
+}
+
+
 export const getOnlineUsers: RequestHandler = async (req: any, res: any) => {
   logger.info("get online users");
   try
@@ -104,6 +113,66 @@ async function updateRanks(): Promise<void> {
     console.error('Error querying collection:', error);
   })
 }
+
+// Give Award
+export const getDailyAward: RequestHandler = async (req, res) => {
+  logger.info("Get Award");
+  const { userId } = req.query; 
+  try {
+    const { rewardAmount, walletAddress } = req.body;
+    // Example usage
+    const value = ethers.utils.parseUnits(rewardAmount, 18); // Transfer 100 Candy Tokens
+    const receipt = await transferCandyToken(walletAddress, value);
+    if (receipt.status === 1) {
+      // Update database with successful transaction
+      const rewardUsers = (await db.collection(leaderboardCollection).doc("dailyReward").get()).data();
+      console.log(rewardUsers)
+      const updatedUsers = rewardUsers?.users.map((user : AwardUser) => {
+        if (user.name === userId) {
+          return { ...user, reward: false };
+        } else {
+          return user;
+        }
+      });
+      await db.collection(leaderboardCollection).doc("dailyReward").set({users: updatedUsers});
+      return res.status(200).json({ message: 'Award sent successfully' });
+    } else {
+      return res.status(500).json({ message: 'Transaction failed' });
+    }
+  } catch (error) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+  }
+};
+
+// Give Weekly Award
+export const getWeeklyAward: RequestHandler = async (req, res) => {
+  logger.info("Get Award");
+  const { userId } = req.query; 
+  try {
+    const { rewardAmount, walletAddress } = req.body;
+    // Example usage
+    const value = ethers.utils.parseUnits(rewardAmount, 18); // Transfer 100 Candy Tokens
+    const receipt = await transferCandyToken(walletAddress, value);
+    if (receipt.status === 1) {
+      // Update database with successful transaction
+      const rewardUsers = (await db.collection(leaderboardCollection).doc("weeklyReward").get()).data();
+      console.log(rewardUsers)
+      const updatedUsers = rewardUsers?.users.map((user : AwardUser) => {
+        if (user.name === userId) {
+          return { ...user, reward: false };
+        } else {
+          return user;
+        }
+      });
+      await db.collection(leaderboardCollection).doc("weeklyReward").set({users: updatedUsers});
+      return res.status(200).json({ message: 'Award sent successfully' });
+    } else {
+      return res.status(500).json({ message: 'Transaction failed' });
+    }
+  } catch (error) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+  }
+};
 
 // Set up transfer function
 export async function transferCandyToken(to: string, value: ethers.BigNumberish) {

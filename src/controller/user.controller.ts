@@ -4,6 +4,7 @@ import logger from "../utils/logger";
 import { powerupCollection, userCollection } from "../config/collections";
 import FirestoreService from "../service/firestore.service";
 import { getFirestore } from "firebase-admin/firestore";
+import * as admin from 'firebase-admin';
 
 const db = getFirestore();
 
@@ -120,5 +121,41 @@ export const getPowerupItem: RequestHandler = async (req: any, res: any) => {
   }
 };
 
-const user = { deleteUser, updateUser, postScore, getUser, getPowerupItem};
+export const addBalance: RequestHandler = async (req: any, res: any) => {
+  logger.info("Add balance");
+  try {
+    const userId = req.query.userId;
+    const { amount } = req.body;
+    // Get the current token value
+    const userDoc = await db.collection(userCollection).where('userName', '==', userId).get();
+    const currentTokenValue = userDoc.docs[0].data().token;
+
+    // Calculate the new token value
+    const newTokenValue = currentTokenValue + parseInt(amount);
+
+    // Check if the new token value is less than 0
+    if (newTokenValue < 0) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: "Need more balance. Token value cannot be less than 0" });
+    }
+    await (await db.collection(userCollection).where('userName', '==', userId).get()).docs[0].ref.update({token : admin.firestore.FieldValue.increment(parseInt(amount))})
+    .then((_response) => {
+      return res
+        .status(StatusCodes.OK)
+        .json({ status: "successfully added" });
+    })
+    .catch((error: any) => {
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ error: error.message });
+    });
+  } catch(error)
+  {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+  }
+}
+
+
+const user = { deleteUser, updateUser, postScore, getUser, getPowerupItem, addBalance};
 export default user;

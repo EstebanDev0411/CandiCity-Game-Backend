@@ -106,6 +106,7 @@ export const signup: RequestHandler = async (req: any, res: any) => {
         point: 0,
         rank: 999,
         level: 1,
+        token: 0,
         is_online: true,
         userName: req.body.userName
       };

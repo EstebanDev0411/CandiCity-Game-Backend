@@ -255,5 +255,5 @@ setInterval(() => {
     // }
   }, 60000);
 
-const leaderboard = { getLeaderboard, getAwardLeaderboard, getAvailableMatches, getMatchHistory };
+const leaderboard = { getLeaderboard, getAwardLeaderboard, getDailyAward, getAvailableMatches, getMatchHistory };
 export default leaderboard;

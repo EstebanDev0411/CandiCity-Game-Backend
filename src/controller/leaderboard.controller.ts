@@ -2,7 +2,7 @@ import { RequestHandler } from "express";
 import { StatusCodes } from "http-status-codes";
 import logger from "../utils/logger";
 import FirestoreService from "../service/firestore.service";
-import { userCollection, matchCollection, leaderboardCollection } from "../config/collections";
+import { matchCollection, leaderboardCollection } from "../config/collections";
 import { getFirestore } from "firebase-admin/firestore";
 import { ethers } from "ethers"; 
 
@@ -22,7 +22,7 @@ const db = getFirestore();
 
 interface AwardUser {
   reward: boolean;
-  name: string;
+  user: string;
   id: string;
   dailyScore: number;
 }
@@ -30,13 +30,45 @@ interface AwardUser {
 export const getLeaderboard: RequestHandler = async (req: any, res: any) => {
   logger.info("get leaderboard");
   try {
-    const { count, page } = req.query;
+    const { count, page, userId } = req.query;
     const startAfter = count * (page - 1);
     const endBefore = startAfter + count;
-    const querySnapshot = await db.collection(userCollection).orderBy('level','desc').get();
-    const leaderboardData = querySnapshot.docs.map((doc) => doc.data());
+    
+    // Retrieve the users array data from the currentLeaderboard document
+    const querySnapshot = await db.collection(leaderboardCollection).doc('currentLeaderboard').get();
+    const leaderboardData = querySnapshot.data()?.users || [];
+    // Sort the users array in descending order by winCount and add a rank property to each item
+    leaderboardData.sort((a: { winCount: number; }, b: { winCount: number; }) => b.winCount - a.winCount);
+    leaderboardData.forEach((user: { rank: any; }, index: number) => user.rank = index + 1);
+    const myRank = leaderboardData.find((data: { user: any; }) => data.user === userId);
+    // Paginate the leaderboard data based on the count and page query parameters
     const paginationData = leaderboardData.slice(startAfter, endBefore);
-    return res.status(StatusCodes.OK).json(paginationData);
+
+    return res.status(StatusCodes.OK).json({myRank, paginationData});
+  } catch(error) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
+  }
+};
+
+
+export const getAwardLeaderboard: RequestHandler = async (req: any, res: any) => {
+  logger.info("get award leaderboard");
+  try {
+    const { count, page, userId } = req.query;
+    const startAfter = count * (page - 1);
+    const endBefore = startAfter + count;
+    
+    // Retrieve the users array data from the currentLeaderboard document
+    const querySnapshot = await db.collection(leaderboardCollection).doc('rewardLeaderboard').get();
+    const leaderboardData = querySnapshot.data()?.users || [];
+    // Sort the users array in descending order by winCount and add a rank property to each item
+    leaderboardData.sort((a: { winCount: number; }, b: { winCount: number; }) => b.winCount - a.winCount);
+    leaderboardData.forEach((user: { rank: any; }, index: number) => user.rank = index + 1);
+    const myRank = leaderboardData.find((data: { user: any; }) => data.user === userId);
+    // Paginate the leaderboard data based on the count and page query parameters
+    const paginationData = leaderboardData.slice(startAfter, endBefore);
+
+    return res.status(StatusCodes.OK).json({myRank, paginationData});
   } catch(error) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
   }
@@ -112,46 +144,15 @@ export const getDailyAward: RequestHandler = async (req, res) => {
     const receipt = await transferCandyToken(walletAddress, value);
     if (receipt.status === 1) {
       // Update database with successful transaction
-      const rewardUsers = (await db.collection(leaderboardCollection).doc("dailyReward").get()).data();
-      console.log(rewardUsers)
+      const rewardUsers = (await db.collection(leaderboardCollection).doc("rewardLeaderboard").get()).data();
       const updatedUsers = rewardUsers?.users.map((user : AwardUser) => {
-        if (user.name === userId) {
+        if (user.user === userId) {
           return { ...user, reward: false };
         } else {
           return user;
         }
       });
-      await db.collection(leaderboardCollection).doc("dailyReward").set({users: updatedUsers});
-      return res.status(200).json({ message: 'Award sent successfully' });
-    } else {
-      return res.status(500).json({ message: 'Transaction failed' });
-    }
-  } catch (error) {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
-  }
-};
-
-// Give Weekly Award
-export const getWeeklyAward: RequestHandler = async (req, res) => {
-  logger.info("Get Award");
-  const { userId } = req.query; 
-  try {
-    const { rewardAmount, walletAddress } = req.body;
-    // Example usage
-    const value = ethers.utils.parseUnits(rewardAmount, 18); // Transfer 100 Candy Tokens
-    const receipt = await transferCandyToken(walletAddress, value);
-    if (receipt.status === 1) {
-      // Update database with successful transaction
-      const rewardUsers = (await db.collection(leaderboardCollection).doc("weeklyReward").get()).data();
-      console.log(rewardUsers)
-      const updatedUsers = rewardUsers?.users.map((user : AwardUser) => {
-        if (user.name === userId) {
-          return { ...user, reward: false };
-        } else {
-          return user;
-        }
-      });
-      await db.collection(leaderboardCollection).doc("weeklyReward").set({users: updatedUsers});
+      await db.collection(leaderboardCollection).doc("rewardLeaderboard").set({users: updatedUsers});
       return res.status(200).json({ message: 'Award sent successfully' });
     } else {
       return res.status(500).json({ message: 'Transaction failed' });
@@ -171,25 +172,30 @@ export async function transferCandyToken(to: string, value: ethers.BigNumberish)
 }
 
 // // Define a function to update the daily leaderboard
-// async function updateDailyLeaderboards() {
-//   console.log('update daily leaderboards!')
-//   const usersRef = db.collection(userCollection);
-//   const leaderboardRef = db.collection(leaderboardCollection);
+async function updateLeaderboard() {
+  console.log('update daily leaderboards!')
+  const leaderboardRef = db.collection(leaderboardCollection);
 
-//   const today = new Date();
-//   const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
-//   // const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
+  // Get the top 10 users by win count from the current leaderboard
+  const querySnapshot = await leaderboardRef.doc('currentLeaderboard').get();
+  const currentLeaderboardData = querySnapshot.data();
+  const top10Users = currentLeaderboardData?.users
+    .filter((user: { winCount: number; }) => user.winCount > 0) // Exclude users with a win count of 0
+    .sort((a: { winCount: number; }, b: { winCount: number; }) => b.winCount - a.winCount)
+    .slice(0, 10)
+    .map((user: { winCount: number; }) => {
+      return {
+        ...user,
+        reward: false // Add a reward property to each user object
+      };
+    });
 
-//   // Get the top 3 daily users and update the daily top 3 collection
-//   const yesterdayQuery = await usersRef.where('lastPlayed', '>=', yesterday).get();
-//   const yesterdayUsers = yesterdayQuery.docs.map(doc => ({ id: doc.id, name: doc.data().userName, dailyScore: doc.data().dailyScore, reward: true }));
-//   // Sort the users by daily score and get the top 3
-//   const top3Users = yesterdayUsers
-//     .filter(user => user.dailyScore > 0) // Exclude users with a daily score of 0
-//     .sort((a, b) => b.dailyScore - a.dailyScore);
-//   console.log(top3Users)
-//   await leaderboardRef.doc("dailyBoard").set({users: top3Users});
-// }
+  // Copy the top 10 users to the reward leaderboard
+  await leaderboardRef.doc('rewardLeaderboard').set({ users: top10Users });
+
+  // Reset the current leaderboard as empty data
+  await leaderboardRef.doc('currentLeaderboard').set({ users: [] });
+}
 
 // // Define a function to update the weekly leaderboard
 // async function updateWeeklyLeaderboards() {
@@ -234,20 +240,20 @@ export async function transferCandyToken(to: string, value: ethers.BigNumberish)
 // }
 
 // // Call the updateLeaderboards function once a day at midnight
-// setInterval(() => {
-//   const now = new Date();
-//     if (now.getHours() === 0 && now.getMinutes() === 0) {
-//       updateDailyLeaderboards();
-//         // resetScores();
-//     }
-//     if (now.getDay() === 1 && now.getHours() === 0 && now.getMinutes() === 0)
-//     {
-//       updateWeeklyLeaderboards();
-//     }
-//     if (now.getDate() === 1 && now.getHours() === 0 && now.getMinutes() === 0) {
-//       updateMonthlyLeaderboards();
-//     }
-//   }, 60000);
+setInterval(() => {
+  const now = new Date();
+    if (now.getHours() === 0 && now.getMinutes() === 0) {
+      updateLeaderboard();
+        // resetScores();
+    }
+    // if (now.getDay() === 1 && now.getHours() === 0 && now.getMinutes() === 0)
+    // {
+    //   updateWeeklyLeaderboards();
+    // }
+    // if (now.getDate() === 1 && now.getHours() === 0 && now.getMinutes() === 0) {
+    //   updateMonthlyLeaderboards();
+    // }
+  }, 60000);
 
-const leaderboard = { getLeaderboard, getAvailableMatches, getMatchHistory };
+const leaderboard = { getLeaderboard, getAwardLeaderboard, getAvailableMatches, getMatchHistory };
 export default leaderboard;

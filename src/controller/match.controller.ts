@@ -96,18 +96,21 @@ export const postWin: RequestHandler = async (req: any, res: any) => {
   logger.info("Post Win");
   const user_id = req.query.userId;
   try {
-    const docRef = await db.collection(leaderboardCollection).where('user', '==', user_id).get();
-    if (docRef.empty) {
-      // No document exists with user1 equal to user_id, so create a new document with winCount as 1
-      await db.collection(leaderboardCollection).add({ user: user_id, winCount: 1 });
-      return res.status(StatusCodes.OK).json({ message: 'New document created with winCount as 1' });
+    // Add the user's data to the current leaderboard
+    const currentLeaderboardRef = db.collection(leaderboardCollection).doc('currentLeaderboard');
+    const currentLeaderboardDoc = await currentLeaderboardRef.get();
+    const currentUsers = currentLeaderboardDoc.data()?.users || [];
+    const currentUserIndex = currentUsers.findIndex((user:any) => user.user === user_id);
+    if (currentUserIndex === -1) {
+      // User doesn't exist in the current leaderboard, so add a new entry
+      currentUsers.push({ user: user_id, winCount: 1 });
     } else {
-      // A document exists with user1 equal to user_id, so update its winCount
-      const doc = docRef.docs[0];
-      const currentWinCount = doc.get('winCount');
-      await doc.ref.update({ winCount: currentWinCount + 1 });
-      return res.status(StatusCodes.OK).json({ message: 'Win count updated successfully' });
+      // User already exists in the current leaderboard, so update its winCount
+      currentUsers[currentUserIndex].winCount += 1;
     }
+    await currentLeaderboardRef.update({ users: currentUsers });
+
+    return res.status(StatusCodes.OK).json({ message: 'Win count updated successfully' });
   } catch(error) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
   }

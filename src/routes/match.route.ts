@@ -8,6 +8,7 @@ const matchRoute = Router();
 matchRoute.post("/createMatch", verifyBodyRequest, match.createMatch);
 matchRoute.post("/startMatch", verifyBodyRequest, match.startMatch);
 matchRoute.post("/finishMatch", verifyBodyRequest, match.finishMatch);
+matchRoute.post("/postWin", match.postWin);
 matchRoute.get("/getMatchesByUserId", match.getMatchesByUserId);
 
 export default matchRoute;
